@@ -1,0 +1,104 @@
+{
+  "updated_at": null,
+  "tools": {
+    "unlocktool": {
+      "name": "UnlockTool",
+      "version": "2026-09-02-0",
+      "description": "Herramienta completa para desbloqueo",
+      "source": "https://file.unlocktool.net/",
+      "downloads": {
+        "google_drive": "https://drive.google.com/file/d/1zXKFjQLgzdu1QWYI5hJoVWtVK9S0U1VK/view?usp=sharing",
+        "mediafire": "https://www.mediafire.com/file_premium/g7ji0f6rswt9l1z/UnlockTool-2026-09-02-0.zip/file",
+        "mega": "https://mega.nz/file/e84nHATT#qYJdDqqPFtTQq64NwTykEbphyKLJgEy6z3z2NSUF9D0"
+      }
+    },
+
+    "software_fix": {
+      "name": "Software Fix - Lenovo/Motorola",
+      "version": "6.2.2.4",
+      "description": "Herramienta para reparación de software",
+      "source": "https://es-es.support.motorola.com/app/answers/detail/a_id/164170",
+      "downloads": {
+        "installer": "https://download.lenovo.com/lsa/Releases/Rescue_and_Smart_Assistant_v6.2.2.4_prod_setup.exe"
+      }
+    },
+
+    "samfw": {
+      "name": "SamFw Tool",
+      "version": "5.9",
+      "description": "Herramienta para dispositivos Samsung",
+      "source": "https://samfw.com/blog/samfwtool",
+      "downloads": {
+        "zip": "https://samfw.com/SamFwToolSetup_v5.9.zip"
+      }
+    },
+
+    "primetoolx": {
+      "name": "PrimeToolX",
+      "version": "8.8",
+      "description": "Herramienta para técnicos",
+      "source": "https://www.gsmprime.online/",
+      "downloads": {
+        "mediafire": "https://www.mediafire.com/file_premium/b1i8hi4vfazm0re/PrimeToolX8.8.rar/file"
+      }
+    },
+
+    "tsm_tool_pro": {
+      "name": "TSM-TOOL PRO",
+      "version": "2.4.1",
+      "description": "Funciones avanzadas para técnicos",
+      "source": "https://tsm-tool.com/download",
+      "downloads": {
+        "google_drive": "https://drive.google.com/file/d/1aFaZe_PAZP2IbrUiJH6UPf6fE4-1H1Vb/view?usp=sharing",
+        "mega": "https://mega.nz/file/r3pxBBzY#0C8VOouqDxy0B30HEJtYHwNi9_0DfWo9OnmTuGoojBk",
+        "mediafire": "https://www.mediafire.com/file/vqh1h1uhwq9s2xo/TSM_SetupV2.4.1.7z/file",
+        "dropbox": "https://www.dropbox.com/scl/fi/ieg1lxay7kc5olcu1ocmt/TSM_SetupV2.4.1.7z?rlkey=iclglr7e9itkyw2snfyqdcw9w&st=57r203qn&dl=0"
+      }
+    },
+
+    "tsm_pro_edition": {
+      "name": "TSM-PRO EDITION",
+      "version": "2026.09.06",
+      "description": "Interfaz simple para tareas básicas",
+      "source": "https://tsm-tool.com/download",
+      "downloads": {
+        "google_drive": "https://drive.google.com/file/d/1bQobh0t6WP2d5ynOhbLV2iL1nLvtf--B/view?usp=sharing",
+        "mega": "https://mega.nz/file/vuZgXDoQ#YRzSIqR68AnmPUiBgS0NNMxWk1NVa4E2h2gRHi6deWM",
+        "mediafire": "https://www.mediafire.com/file/exj3eualafj71g9/TSM+Pro+Edition+Setup[2026.09.06].7z/file",
+        "dropbox": "https://www.dropbox.com/scl/fi/tc2mge33dktascscj2eo6/TSM-Pro-Edition-Setup-2026.09.06.7z?rlkey=3cuekeu8n6m5b5bh6m2jrnozp&st=gxiiim6l&dl=0"
+      }
+    },
+
+    "borneo_schematics": {
+      "name": "Borneo Schematics",
+      "version": "1.0.9659.13774",
+      "description": "Herramienta de esquemas para técnicos",
+      "source": "https://updateborneo.com/",
+      "downloads": {
+        "mediafire": "https://www.mediafire.com/file/bfrwsjojh24b7oh/Borneo_Installer_v1.0.9659.13774_-_New.rar/file",
+        "mega": "https://mega.nz/file/wI90nTDY#yD_ta3VjpxP1lmBj-QA4y-YA1S9QtkVDxABZCfQMKg",
+        "google_drive": "https://drive.google.com/file/d/1ASviLm1pJHVrA3wJ9wzTLopHF_0SY_xY/view?usp=sharing"
+      }
+    },
+
+    "iremoval_pro_x": {
+      "name": "iRemoval PRO X",
+      "version": "7.2",
+      "description": "Herramienta iRemoval PRO",
+      "source": "https://iremovalpro.com/",
+      "downloads": {
+        "mega": "https://mega.nz/file/C4VWUBAD#Mtj11jqRhIhJi9IwQsxEtmW6QCjUOm3iO2KFbI2P324"
+      }
+    },
+
+    "iremoval_pro_premium": {
+      "name": "iRemoval PRO Premium",
+      "version": "5.2.1",
+      "description": "Edición Premium de iRemoval PRO",
+      "source": "https://iremovalpro.com/",
+      "downloads": {
+        "mega": "https://mega.nz/file/e1dgxSaY#5dY9rJcg4iJo70GsHxNmLsuIMJ9vgx9TJVVENjVQ3qc"
+      }
+    }
+  }
+}
