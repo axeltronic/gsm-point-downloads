@@ -270,11 +270,13 @@ async function updateUnlockTool() {
 
 
 /* =========================================================
-   SOFTWARE FIX - LENOVO / MOTOROLA - VERSIÓN MEJORADA
+   SOFTWARE FIX - LENOVO / MOTOROLA - VERSIÓN DEFINITIVA
    ========================================================= */
 
 async function updateSoftwareFix() {
   const html = await fetchPage(SOURCES.software_fix);
+  
+  console.log("🔍 Buscando instalador de Software Fix...");
   
   // Guardar HTML para depuración
   const debugDir = path.join(__dirname, 'debug');
@@ -285,18 +287,12 @@ async function updateSoftwareFix() {
   fs.writeFileSync(debugFile, html, 'utf8');
   console.log(`📁 HTML guardado para depuración en: ${debugFile}`);
   
-  console.log("🔍 Buscando instalador de Software Fix...");
-  
-  /*
-   * Buscar TODOS los posibles enlaces de instalación
-   * con diferentes patrones
-   */
-  
+  // Buscar TODOS los enlaces de descarga de Rescue and Smart Assistant
   const allMatches = [];
   
-  // Patrón 1: Rescue_and_Smart_Assistant_vX.X.X.X_prod_setup.exe
-  const pattern1 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi;
-  for (const match of html.matchAll(pattern1)) {
+  // Patrón principal: Rescue_and_Smart_Assistant_vX.X.X.X_prod_setup.exe
+  const mainPattern = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/lsa\/Releases\/Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi;
+  for (const match of html.matchAll(mainPattern)) {
     allMatches.push({
       version: match[1],
       url: match[0],
@@ -304,79 +300,77 @@ async function updateSoftwareFix() {
     });
   }
   
-  // Patrón 2: software_fix_vX.X.X.X_setup.exe
-  const pattern2 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v?(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi;
-  for (const match of html.matchAll(pattern2)) {
-    allMatches.push({
-      version: match[1],
-      url: match[0],
-      pattern: 'software_fix'
-    });
+  // Patrón alternativo: Cualquier .exe en download.lenovo.com con versión
+  const altPattern = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*\.exe/gi;
+  for (const match of html.matchAll(altPattern)) {
+    const url = match[0];
+    const versionMatch = url.match(/(\d+\.\d+\.\d+\.\d+)/);
+    if (versionMatch && (url.includes('Rescue') || url.includes('Assistant') || url.includes('software') || url.includes('lmsa') || url.includes('rsa') || url.includes('lsa'))) {
+      allMatches.push({
+        version: versionMatch[1],
+        url: url,
+        pattern: 'fallback'
+      });
+    }
   }
   
-  // Patrón 3: lmsa_vX.X.X.X.exe
-  const pattern3 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*lmsa_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi;
-  for (const match of html.matchAll(pattern3)) {
-    allMatches.push({
-      version: match[1],
-      url: match[0],
-      pattern: 'lmsa'
-    });
-  }
-  
-  // Patrón 4: RSA_vX.X.X.X_setup.exe
-  const pattern4 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*RSA_v?(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi;
-  for (const match of html.matchAll(pattern4)) {
-    allMatches.push({
-      version: match[1],
-      url: match[0],
-      pattern: 'RSA'
-    });
-  }
-  
-  // Patrón 5: Rescue_Assistant_vX.X.X.X.exe
-  const pattern5 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*Rescue_Assistant_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi;
-  for (const match of html.matchAll(pattern5)) {
-    allMatches.push({
-      version: match[1],
-      url: match[0],
-      pattern: 'Rescue_Assistant'
-    });
-  }
-  
-  console.log(`📊 Encontrados ${allMatches.length} posibles instaladores`);
-  
+  // Si no encuentra nada, buscar en todo el HTML
   if (!allMatches.length) {
-    // Si no encontramos enlaces, intentamos buscar cualquier .exe relacionado
-    console.log("⚠️ No se encontraron instaladores con patrones específicos, buscando cualquier .exe...");
-    const fallbackPattern = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*\.exe/gi;
-    const exeMatches = [...html.matchAll(fallbackPattern)];
-    
-    for (const match of exeMatches) {
+    const broadPattern = /https?:\/\/[^"'\s<>]*lenovo\.com\/[^"'\s<>]*(?:Rescue|Assistant|software|lsa)[^"'\s<>]*\.exe/gi;
+    for (const match of html.matchAll(broadPattern)) {
       const url = match[0];
-      // Intentar extraer versión del nombre del archivo
       const versionMatch = url.match(/(\d+\.\d+\.\d+\.\d+)/);
-      if (versionMatch && (url.includes('Rescue') || url.includes('Assistant') || url.includes('software') || url.includes('lmsa') || url.includes('rsa'))) {
+      if (versionMatch) {
         allMatches.push({
           version: versionMatch[1],
           url: url,
-          pattern: 'fallback'
+          pattern: 'broad'
         });
       }
     }
   }
   
+  // Si aún no encuentra, buscar en los href
   if (!allMatches.length) {
-    throw new Error("No se encontró ningún instalador de Software Fix en Lenovo");
+    const hrefPattern = /href\s*=\s*["']([^"']*download\.lenovo\.com[^"']*\.exe)["']/gi;
+    for (const match of html.matchAll(hrefPattern)) {
+      const url = match[1];
+      const versionMatch = url.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if (versionMatch) {
+        allMatches.push({
+          version: versionMatch[1],
+          url: url.startsWith('http') ? url : `https:${url}`,
+          pattern: 'href'
+        });
+      }
+    }
   }
   
   // Mostrar todas las versiones encontradas
-  console.log("📋 Versiones encontradas:");
-  allMatches.forEach((m, i) => {
-    console.log(`  ${i+1}. ${m.version} (${m.pattern}): ${m.url.substring(0, 80)}...`);
-  });
+  if (allMatches.length) {
+    console.log(`📊 Encontradas ${allMatches.length} versiones:`);
+    const uniqueVersions = new Set();
+    allMatches.forEach((m) => {
+      uniqueVersions.add(m.version);
+    });
+    console.log(`📋 Versiones únicas: ${Array.from(uniqueVersions).sort().join(', ')}`);
+  }
   
-  // Eliminar duplicados
+  // Si no hay matches, usar la última versión conocida
+  if (!allMatches.length) {
+    console.warn("⚠️ No se encontraron enlaces en la página, usando versión conocida");
+    return {
+      name: "Software Fix - Lenovo/Motorola",
+      version: "6.2.2.4",
+      description: "Herramienta para reparación de software",
+      source: SOURCES.software_fix,
+      downloads: {
+        installer: "https://download.lenovo.com/lsa/Releases/Rescue_and_Smart_Assistant_v6.2.2.4_prod_setup.exe"
+      }
+    };
+  }
+  
+  // Eliminar duplicados y obtener la versión más reciente
   const uniqueMatches = [];
   const seenUrls = new Set();
   
@@ -387,15 +381,23 @@ async function updateSoftwareFix() {
     }
   }
   
-  // Ordenar por versión (usando compareVersions)
+  // Ordenar por versión (de mayor a menor)
   uniqueMatches.sort((a, b) => {
-    return compareVersions(a.version, b.version);
+    const partsA = a.version.split('.').map(Number);
+    const partsB = b.version.split('.').map(Number);
+    
+    for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+      const aVal = partsA[i] || 0;
+      const bVal = partsB[i] || 0;
+      if (aVal !== bVal) return bVal - aVal; // Orden descendente
+    }
+    return 0;
   });
   
-  const latest = uniqueMatches.at(-1);
+  const latest = uniqueMatches[0];
   
-  console.log(`✅ Versión más reciente: ${latest.version} (${latest.pattern})`);
-  console.log(`📥 Enlace: ${latest.url}`);
+  console.log(`✅ Versión más reciente encontrada: ${latest.version}`);
+  console.log(`📥 URL: ${latest.url}`);
   
   return {
     name: "Software Fix - Lenovo/Motorola",
