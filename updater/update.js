@@ -5,12 +5,18 @@ const OUTPUT = path.join(__dirname, "..", "data", "downloads.json");
 
 const SOURCES = {
   unlocktool: "https://file.unlocktool.net/",
+
   software_fix:
-    "https://es-es.support.motorola.com/app/answers/detail/a_id/164170",
+    "https://support.lenovo.com/us/en/downloads/ds101291-rescue-and-smart-assistant-lmsa",
+
   samfw: "https://samfw.com/blog/samfwtool",
+
   primetoolx: "https://www.gsmprime.online/",
+
   tsm: "https://tsm-tool.com/download",
+
   borneo: "https://updateborneo.com/",
+
   iremoval: "https://iremovalpro.com/"
 };
 
@@ -55,15 +61,21 @@ async function fetchPage(url) {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36",
+
       Accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+
+      "Accept-Language":
+        "es-ES,es;q=0.9,en;q=0.8"
     },
+
     redirect: "follow"
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} al consultar ${url}`);
+    throw new Error(
+      `HTTP ${response.status} al consultar ${url}`
+    );
   }
 
   return await response.text();
@@ -75,7 +87,9 @@ function extractHrefs(html, base) {
   for (const match of html.matchAll(
     /href\s*=\s*["']([^"']+)["']/gi
   )) {
-    links.push(absoluteUrl(match[1], base));
+    links.push(
+      absoluteUrl(match[1], base)
+    );
   }
 
   return unique(links);
@@ -87,7 +101,9 @@ function extractMediaFireLinks(html, base) {
   for (const match of html.matchAll(
     /href\s*=\s*["']([^"']*mediafire\.com[^"']*)["']/gi
   )) {
-    links.push(absoluteUrl(match[1], base));
+    links.push(
+      absoluteUrl(match[1], base)
+    );
   }
 
   for (const match of html.matchAll(
@@ -140,7 +156,9 @@ function extractDropboxLinks(html) {
    ========================================================= */
 
 async function updateUnlockTool() {
-  const html = await fetchPage(SOURCES.unlocktool);
+  const html = await fetchPage(
+    SOURCES.unlocktool
+  );
 
   const versions = unique(
     [...html.matchAll(
@@ -149,11 +167,16 @@ async function updateUnlockTool() {
   );
 
   if (!versions.length) {
-    throw new Error("No se encontró versión de UnlockTool");
+    throw new Error(
+      "No se encontró versión de UnlockTool"
+    );
   }
 
-  const version = versions.sort().at(-1);
-  const versionPattern = `UnlockTool-${version}`;
+  const version =
+    versions.sort().at(-1);
+
+  const versionPattern =
+    `UnlockTool-${version}`;
 
   const links = [];
 
@@ -164,7 +187,10 @@ async function updateUnlockTool() {
 
   for (const match of html.matchAll(regex)) {
     links.push(
-      absoluteUrl(match[1], SOURCES.unlocktool)
+      absoluteUrl(
+        match[1],
+        SOURCES.unlocktool
+      )
     );
   }
 
@@ -173,22 +199,35 @@ async function updateUnlockTool() {
     "gi"
   );
 
-  for (const match of html.matchAll(broadRegex)) {
+  for (const match of html.matchAll(
+    broadRegex
+  )) {
     links.push(match[0]);
   }
 
   const downloads = {};
 
   for (const link of unique(links)) {
-    const lower = link.toLowerCase();
+    const lower =
+      link.toLowerCase();
 
     if (lower.includes("mediafire")) {
       downloads.mediafire = link;
-    } else if (lower.includes("mega.nz")) {
+    }
+
+    else if (lower.includes("mega.nz")) {
       downloads.mega = link;
-    } else if (lower.includes("drive.google.com")) {
+    }
+
+    else if (
+      lower.includes("drive.google.com")
+    ) {
       downloads.google_drive = link;
-    } else if (lower.includes("dropbox")) {
+    }
+
+    else if (
+      lower.includes("dropbox")
+    ) {
       downloads.dropbox = link;
     }
   }
@@ -202,52 +241,95 @@ async function updateUnlockTool() {
   return {
     name: "UnlockTool",
     version,
-    description: "Herramienta completa para desbloqueo",
+    description:
+      "Herramienta completa para desbloqueo",
     source: SOURCES.unlocktool,
     downloads
   };
 }
 
 /* =========================================================
-   MOTOROLA SOFTWARE FIX
+   SOFTWARE FIX - LENOVO / MOTOROLA
    ========================================================= */
 
 async function updateSoftwareFix() {
-  const html = await fetchPage(SOURCES.software_fix);
+  const html =
+    await fetchPage(
+      SOURCES.software_fix
+    );
 
-  const versions = [
+  /*
+   * Lenovo actualmente publica el instalador
+   * con este formato:
+   *
+   * software_fix_v7.6.2.10_setup.exe
+   */
+
+  const matches = [
     ...html.matchAll(
-      /Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi
+      /software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi
     )
-  ].map((m) => m[1]);
+  ];
 
-  if (!versions.length) {
+  if (!matches.length) {
     throw new Error(
-      "No se encontró versión de Software Fix"
+      "No se encontró versión de Software Fix en Lenovo"
     );
   }
 
-  const version = versions.at(-1);
+  const versions =
+    unique(
+      matches.map((m) => m[1])
+    );
 
-  const installers = [
+  const version =
+    versions.sort(compareVersions).at(-1);
+
+  /*
+   * Buscamos específicamente el instalador
+   * oficial alojado en download.lenovo.com
+   */
+
+  const installerMatches = [
     ...html.matchAll(
-      /https?:\/\/[^"'<> \s]*Rescue_and_Smart_Assistant_v\d+\.\d+\.\d+\.\d+_prod_setup\.exe/gi
+      /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v\d+\.\d+\.\d+_setup\.exe/gi
     )
   ].map((m) => m[0]);
 
-  if (!installers.length) {
+  if (!installerMatches.length) {
     throw new Error(
-      "No se encontró instalador de Software Fix"
+      "No se encontró instalador de Software Fix en Lenovo"
     );
   }
 
+  /*
+   * Elegimos el instalador correspondiente
+   * a la versión detectada.
+   */
+
+  const installer =
+    installerMatches.find(
+      (url) =>
+        url.includes(
+          `software_fix_v${version}_setup.exe`
+        )
+    ) ||
+    installerMatches.at(-1);
+
   return {
-    name: "Software Fix - Lenovo/Motorola",
+    name:
+      "Software Fix - Lenovo/Motorola",
+
     version,
-    description: "Herramienta para reparación de software",
-    source: SOURCES.software_fix,
+
+    description:
+      "Herramienta para reparación de software",
+
+    source:
+      SOURCES.software_fix,
+
     downloads: {
-      installer: installers.at(-1)
+      installer
     }
   };
 }
@@ -257,7 +339,10 @@ async function updateSoftwareFix() {
    ========================================================= */
 
 async function updateSamfw() {
-  const html = await fetchPage(SOURCES.samfw);
+  const html =
+    await fetchPage(
+      SOURCES.samfw
+    );
 
   const versions = [
     ...html.matchAll(
@@ -271,10 +356,13 @@ async function updateSamfw() {
     )
   ];
 
-  const candidates = unique([
-    ...versions,
-    ...zipMatches.map((m) => m[1])
-  ]);
+  const candidates =
+    unique([
+      ...versions,
+      ...zipMatches.map(
+        (m) => m[1]
+      )
+    ]);
 
   if (!candidates.length) {
     throw new Error(
@@ -282,17 +370,26 @@ async function updateSamfw() {
     );
   }
 
-  const version = candidates
-    .sort(compareVersions)
-    .at(-1);
+  const version =
+    candidates
+      .sort(compareVersions)
+      .at(-1);
 
   return {
-    name: "SamFw Tool",
+    name:
+      "SamFw Tool",
+
     version,
-    description: "Herramienta para dispositivos Samsung",
-    source: SOURCES.samfw,
+
+    description:
+      "Herramienta para dispositivos Samsung",
+
+    source:
+      SOURCES.samfw,
+
     downloads: {
-      zip: `https://samfw.com/SamFwToolSetup_v${version}.zip`
+      zip:
+        `https://samfw.com/SamFwToolSetup_v${version}.zip`
     }
   };
 }
@@ -306,20 +403,31 @@ function extractPrimeVersions(text) {
 
   const patterns = [
     /PrimeToolX\s*(\d+\.\d+(?:\.\d+)?)/gi,
+
     /PrimeToolX(\d+\.\d+(?:\.\d+)?)/gi,
+
     /PrimeTool\s*X\s*(\d+\.\d+(?:\.\d+)?)/gi,
+
     /PrimeToolX[_\s-]*v?(\d+(?:\.\d+)+)/gi
   ];
 
   for (const pattern of patterns) {
-    for (const match of text.matchAll(pattern)) {
-      const version = match[1];
+    for (const match of text.matchAll(
+      pattern
+    )) {
+      const version =
+        match[1];
 
       /*
-       * 26.6.2 es el número de la página/producto.
-       * No es la versión que queremos.
+       * 26.6.2 corresponde al nombre
+       * de la página/producto.
+       *
+       * NO es la versión de descarga.
        */
-      if (version.startsWith("26.")) {
+
+      if (
+        version.startsWith("26.")
+      ) {
         continue;
       }
 
@@ -331,16 +439,23 @@ function extractPrimeVersions(text) {
 }
 
 async function updatePrimeToolX() {
-  const homeHtml = await fetchPage(SOURCES.primetoolx);
+  const homeHtml =
+    await fetchPage(
+      SOURCES.primetoolx
+    );
 
-  const hrefs = extractHrefs(
-    homeHtml,
-    SOURCES.primetoolx
-  );
+  const hrefs =
+    extractHrefs(
+      homeHtml,
+      SOURCES.primetoolx
+    );
 
-  let productUrl = hrefs.find((url) =>
-    /software-primetoolx26/i.test(url)
-  );
+  let productUrl =
+    hrefs.find((url) =>
+      /software-primetoolx26/i.test(
+        url
+      )
+    );
 
   if (!productUrl) {
     productUrl =
@@ -351,7 +466,10 @@ async function updatePrimeToolX() {
     `Página PrimeToolX: ${productUrl}`
   );
 
-  const productHtml = await fetchPage(productUrl);
+  const productHtml =
+    await fetchPage(
+      productUrl
+    );
 
   const mediafireLinks =
     extractMediaFireLinks(
@@ -360,9 +478,10 @@ async function updatePrimeToolX() {
     );
 
   const primeDownloads =
-    mediafireLinks.filter((link) =>
-      /PrimeToolX/i.test(link) ||
-      /PrimeTool/i.test(link)
+    mediafireLinks.filter(
+      (link) =>
+        /PrimeToolX/i.test(link) ||
+        /PrimeTool/i.test(link)
     );
 
   if (!primeDownloads.length) {
@@ -374,19 +493,16 @@ async function updatePrimeToolX() {
   const candidates = [];
 
   /*
-   * La versión sale del nombre del archivo de descarga.
-   *
-   * Ejemplos:
-   *
-   * PrimeToolX8.8.rar
-   * PrimeToolX8.9.rar
-   * PrimeToolX9.rar
-   * PrimeToolX9.1.rar
+   * Primero intentamos obtener
+   * la versión desde el nombre
+   * del archivo.
    */
 
   for (const link of primeDownloads) {
     const versions =
-      extractPrimeVersions(link);
+      extractPrimeVersions(
+        link
+      );
 
     for (const version of versions) {
       candidates.push({
@@ -397,30 +513,42 @@ async function updatePrimeToolX() {
   }
 
   /*
-   * También buscamos "Versión 8.8", etc.,
-   * cerca del enlace.
+   * También buscamos "Versión X.X"
+   * alrededor del enlace.
    */
 
   for (const link of primeDownloads) {
-    const index = productHtml.indexOf(link);
+    const index =
+      productHtml.indexOf(link);
 
     if (index === -1) {
       continue;
     }
 
-    const context = productHtml.slice(
-      Math.max(0, index - 1500),
-      Math.min(productHtml.length, index + 1500)
-    );
+    const context =
+      productHtml.slice(
+        Math.max(
+          0,
+          index - 1500
+        ),
+        Math.min(
+          productHtml.length,
+          index + 1500
+        )
+      );
 
     const versions = [
       ...context.matchAll(
         /(?:versi[oó]n|version)\s*v?\s*(\d+(?:\.\d+)+)/gi
       )
-    ].map((m) => m[1]);
+    ].map(
+      (m) => m[1]
+    );
 
     for (const version of versions) {
-      if (version.startsWith("26.")) {
+      if (
+        version.startsWith("26.")
+      ) {
         continue;
       }
 
@@ -437,20 +565,33 @@ async function updatePrimeToolX() {
     );
   }
 
-  candidates.sort((a, b) =>
-    compareVersions(a.version, b.version)
+  candidates.sort(
+    (a, b) =>
+      compareVersions(
+        a.version,
+        b.version
+      )
   );
 
   const selected =
     candidates.at(-1);
 
   return {
-    name: "PrimeToolX",
-    version: selected.version,
-    description: "Herramienta para técnicos",
-    source: SOURCES.primetoolx,
+    name:
+      "PrimeToolX",
+
+    version:
+      selected.version,
+
+    description:
+      "Herramienta para técnicos",
+
+    source:
+      SOURCES.primetoolx,
+
     downloads: {
-      mediafire: selected.link
+      mediafire:
+        selected.link
     }
   };
 }
@@ -460,7 +601,10 @@ async function updatePrimeToolX() {
    ========================================================= */
 
 async function updateTSM() {
-  const html = await fetchPage(SOURCES.tsm);
+  const html =
+    await fetchPage(
+      SOURCES.tsm
+    );
 
   /*
    * TSM-TOOL PRO
@@ -470,9 +614,12 @@ async function updateTSM() {
     ...html.matchAll(
       /TSM[_\s-]*SetupV?(\d+\.\d+\.\d+)/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
-  let tsmProVersion = null;
+  let tsmProVersion =
+    null;
 
   if (proVersions.length) {
     tsmProVersion =
@@ -486,7 +633,9 @@ async function updateTSM() {
       ...html.matchAll(
         /TSM[\s-]*TOOL[\s-]*PRO[\s\S]{0,1500}?v?(\d+\.\d+\.\d+)/gi
       )
-    ].map((m) => m[1]);
+    ].map(
+      (m) => m[1]
+    );
 
     if (generic.length) {
       tsmProVersion =
@@ -510,18 +659,23 @@ async function updateTSM() {
     ...html.matchAll(
       /TSM[\s-]*Pro[\s-]*Edition[\s\S]{0,2000}?(\d{4}\.\d{2}\.\d{2})/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
   const editionFileVersions = [
     ...html.matchAll(
       /TSM[\s-]*Pro[\s-]*Edition[\s-]*Setup[-_\s]*(\d{4}\.\d{2}\.\d{2})/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
-  const editionCandidates = unique([
-    ...editionVersions,
-    ...editionFileVersions
-  ]);
+  const editionCandidates =
+    unique([
+      ...editionVersions,
+      ...editionFileVersions
+    ]);
 
   if (!editionCandidates.length) {
     throw new Error(
@@ -535,10 +689,14 @@ async function updateTSM() {
       .at(-1);
 
   const googleDriveLinks =
-    extractGoogleDriveLinks(html);
+    extractGoogleDriveLinks(
+      html
+    );
 
   const megaLinks =
-    extractMegaLinks(html);
+    extractMegaLinks(
+      html
+    );
 
   const mediafireLinks =
     extractMediaFireLinks(
@@ -547,75 +705,119 @@ async function updateTSM() {
     );
 
   const dropboxLinks =
-    extractDropboxLinks(html);
+    extractDropboxLinks(
+      html
+    );
 
   const tsmToolDownloads = {};
 
   tsmToolDownloads.google_drive =
-    googleDriveLinks.find((link) =>
-      /1aFaZe_PAZP2IbrUiJH6UPf6fE4-1H1Vb/i.test(link)
+    googleDriveLinks.find(
+      (link) =>
+        /1aFaZe_PAZP2IbrUiJH6UPf6fE4-1H1Vb/i.test(
+          link
+        )
     ) ||
     "https://drive.google.com/file/d/1aFaZe_PAZP2IbrUiJH6UPf6fE4-1H1Vb/view?usp=sharing";
 
   tsmToolDownloads.mega =
-    megaLinks.find((link) =>
-      /r3pxBBzY/i.test(link)
+    megaLinks.find(
+      (link) =>
+        /r3pxBBzY/i.test(
+          link
+        )
     ) ||
     "https://mega.nz/file/r3pxBBzY#0C8VOouqDxy0B30HEJtYHwNi9_0DfWo9OnmTuGoojBk";
 
   tsmToolDownloads.mediafire =
-    mediafireLinks.find((link) =>
-      /TSM_SetupV?2\.4\.1/i.test(link)
+    mediafireLinks.find(
+      (link) =>
+        /TSM_SetupV?2\.4\.1/i.test(
+          link
+        )
     ) ||
     "https://www.mediafire.com/file/vqh1h1uhwq9s2xo/TSM_SetupV2.4.1.7z/file";
 
   tsmToolDownloads.dropbox =
-    dropboxLinks.find((link) =>
-      /TSM_SetupV?2\.4\.1/i.test(link)
+    dropboxLinks.find(
+      (link) =>
+        /TSM_SetupV?2\.4\.1/i.test(
+          link
+        )
     ) ||
     "https://www.dropbox.com/scl/fi/ieg1lxay7kc5olcu1ocmt/TSM_SetupV2.4.1.7z?rlkey=iclglr7e9itkyw2snfyqdcw9w&st=57r203qn&dl=0";
 
   const editionDownloads = {};
 
   editionDownloads.google_drive =
-    googleDriveLinks.find((link) =>
-      /1bQobh0t6WP2d5ynOhbLV2iL1nLvtf--B/i.test(link)
+    googleDriveLinks.find(
+      (link) =>
+        /1bQobh0t6WP2d5ynOhbLV2iL1nLvtf--B/i.test(
+          link
+        )
     ) ||
     "https://drive.google.com/file/d/1bQobh0t6WP2d5ynOhbLV2iL1nLvtf--B/view?usp=sharing";
 
   editionDownloads.mega =
-    megaLinks.find((link) =>
-      /vuZgXDoQ/i.test(link)
+    megaLinks.find(
+      (link) =>
+        /vuZgXDoQ/i.test(
+          link
+        )
     ) ||
     "https://mega.nz/file/vuZgXDoQ#YRzSIqR68AnmPUiBgS0NNMxWk1NVa4E2h2gRHi6deWM";
 
   editionDownloads.mediafire =
-    mediafireLinks.find((link) =>
-      /TSM.*Pro.*Edition.*2026\.09\.06/i.test(link)
+    mediafireLinks.find(
+      (link) =>
+        /TSM.*Pro.*Edition.*2026\.09\.06/i.test(
+          link
+        )
     ) ||
     "https://www.mediafire.com/file/exj3eualafj71g9/TSM+Pro+Edition+Setup[2026.09.06].7z/file";
 
   editionDownloads.dropbox =
-    dropboxLinks.find((link) =>
-      /TSM-Pro-Edition-Setup-2026\.09\.06/i.test(link)
+    dropboxLinks.find(
+      (link) =>
+        /TSM-Pro-Edition-Setup-2026\.09\.06/i.test(
+          link
+        )
     ) ||
     "https://www.dropbox.com/scl/fi/tc2mge33dktascscj2eo6/TSM-Pro-Edition-Setup-2026.09.06.7z?rlkey=3cuekeu8n6m5b5bh6m2jrnozp&st=gxiiim6l&dl=0";
 
   return {
     tsm_tool_pro: {
-      name: "TSM-TOOL PRO",
-      version: tsmProVersion,
-      description: "Funciones avanzadas para técnicos",
-      source: SOURCES.tsm,
-      downloads: tsmToolDownloads
+      name:
+        "TSM-TOOL PRO",
+
+      version:
+        tsmProVersion,
+
+      description:
+        "Funciones avanzadas para técnicos",
+
+      source:
+        SOURCES.tsm,
+
+      downloads:
+        tsmToolDownloads
     },
 
     tsm_pro_edition: {
-      name: "TSM-PRO EDITION",
-      version: editionVersion,
-      description: "Interfaz simple para tareas básicas",
-      source: SOURCES.tsm,
-      downloads: editionDownloads
+      name:
+        "TSM-PRO EDITION",
+
+      version:
+        editionVersion,
+
+      description:
+        "Interfaz simple para tareas básicas",
+
+      source:
+        SOURCES.tsm,
+
+      downloads:
+        editionDownloads
     }
   };
 }
@@ -625,24 +827,32 @@ async function updateTSM() {
    ========================================================= */
 
 async function updateBorneo() {
-  const html = await fetchPage(SOURCES.borneo);
+  const html =
+    await fetchPage(
+      SOURCES.borneo
+    );
 
   const versionMatches = [
     ...html.matchAll(
       /Borneo[\s\S]{0,1500}?v?(\d+\.\d+\.\d+\.\d+)/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
   const installerMatches = [
     ...html.matchAll(
       /Borneo[_\s-]*Installer[_\s-]*v?(\d+\.\d+\.\d+\.\d+)/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
-  const candidates = unique([
-    ...versionMatches,
-    ...installerMatches
-  ]);
+  const candidates =
+    unique([
+      ...versionMatches,
+      ...installerMatches
+    ]);
 
   if (!candidates.length) {
     throw new Error(
@@ -662,41 +872,63 @@ async function updateBorneo() {
     );
 
   const megaLinks =
-    extractMegaLinks(html);
+    extractMegaLinks(
+      html
+    );
 
   const googleDriveLinks =
-    extractGoogleDriveLinks(html);
+    extractGoogleDriveLinks(
+      html
+    );
 
   const downloads = {};
 
-  const versionRegex = new RegExp(
-    version.replace(/\./g, "\\.")
-  );
+  const versionRegex =
+    new RegExp(
+      version.replace(
+        /\./g,
+        "\\."
+      )
+    );
 
   downloads.mediafire =
-    mediafireLinks.find((link) =>
-      /Borneo/i.test(link) &&
-      versionRegex.test(link)
+    mediafireLinks.find(
+      (link) =>
+        /Borneo/i.test(link) &&
+        versionRegex.test(link)
     ) ||
     "https://www.mediafire.com/file/bfrwsjojh24b7oh/Borneo_Installer_v1.0.9659.13774_-_New.rar/file";
 
   downloads.mega =
-    megaLinks.find((link) =>
-      /wI90nTDY/i.test(link)
+    megaLinks.find(
+      (link) =>
+        /wI90nTDY/i.test(
+          link
+        )
     ) ||
     "https://mega.nz/file/wI90nTDY#yD_ta3VjpxP1lmBj-QA4y-YA1S9QtkVDxABZCfQMKg";
 
   downloads.google_drive =
-    googleDriveLinks.find((link) =>
-      /1ASviLm1pJHVrA3wJ9wzTLopHF_0SY_xY/i.test(link)
+    googleDriveLinks.find(
+      (link) =>
+        /1ASviLm1pJHVrA3wJ9wzTLopHF_0SY_xY/i.test(
+          link
+        )
     ) ||
     "https://drive.google.com/file/d/1ASviLm1pJHVrA3wJ9wzTLopHF_0SY_xY/view?usp=sharing";
 
   return {
-    name: "Borneo Schematics",
+    name:
+      "Borneo Schematics",
+
     version,
-    description: "Herramienta de esquemas para técnicos",
-    source: SOURCES.borneo,
+
+    description:
+      "Herramienta de esquemas para técnicos",
+
+    source:
+      SOURCES.borneo,
+
     downloads
   };
 }
@@ -706,19 +938,25 @@ async function updateBorneo() {
    ========================================================= */
 
 async function updateIRemoval() {
-  const html = await fetchPage(SOURCES.iremoval);
+  const html =
+    await fetchPage(
+      SOURCES.iremoval
+    );
 
   /*
    * iRemoval PRO X
    */
 
-  let proXVersion = null;
+  let proXVersion =
+    null;
 
   const proXMatches = [
     ...html.matchAll(
       /iREMOVAL\s*PRO[\s\S]{0,1500}?v?(\d+\.\d+)/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
   if (proXMatches.length) {
     proXVersion =
@@ -731,13 +969,16 @@ async function updateIRemoval() {
    * Premium
    */
 
-  let premiumVersion = null;
+  let premiumVersion =
+    null;
 
   const premiumMatches = [
     ...html.matchAll(
       /Premium[\s\S]{0,1500}?v?(\d+\.\d+\.\d+)/gi
     )
-  ].map((m) => m[1]);
+  ].map(
+    (m) => m[1]
+  );
 
   if (premiumMatches.length) {
     premiumVersion =
@@ -747,24 +988,35 @@ async function updateIRemoval() {
   }
 
   /*
-   * Si la página no expone las versiones,
-   * conservamos las conocidas.
+   * Si la página no expone
+   * las versiones, mantenemos
+   * las últimas conocidas.
    */
 
   if (!proXVersion) {
-    proXVersion = "7.2";
+    proXVersion =
+      "7.2";
   }
 
   if (!premiumVersion) {
-    premiumVersion = "5.2.1";
+    premiumVersion =
+      "5.2.1";
   }
 
   return {
     iremoval_pro_x: {
-      name: "iRemoval PRO X",
-      version: proXVersion,
-      description: "Herramienta iRemoval PRO",
-      source: SOURCES.iremoval,
+      name:
+        "iRemoval PRO X",
+
+      version:
+        proXVersion,
+
+      description:
+        "Herramienta iRemoval PRO",
+
+      source:
+        SOURCES.iremoval,
+
       downloads: {
         mega:
           "https://mega.nz/file/C4VWUBAD#Mtj11jqRhIhJi9IwQsxEtmW6QCjUOm3iO2KFbI2P324"
@@ -772,10 +1024,18 @@ async function updateIRemoval() {
     },
 
     iremoval_pro_premium: {
-      name: "iRemoval PRO Premium",
-      version: premiumVersion,
-      description: "Edición Premium de iRemoval PRO",
-      source: SOURCES.iremoval,
+      name:
+        "iRemoval PRO Premium",
+
+      version:
+        premiumVersion,
+
+      description:
+        "Edición Premium de iRemoval PRO",
+
+      source:
+        SOURCES.iremoval,
+
       downloads: {
         mega:
           "https://mega.nz/file/e1dgxSaY#5dY9rJcg4iJo70GsHxNmLsuIMJ9vgx9TJVVENjVQ3qc"
@@ -790,15 +1050,22 @@ async function updateIRemoval() {
 
 async function main() {
   console.log("");
-  console.log("======================================");
-  console.log(" GSMPoint - Actualizador de descargas ");
-  console.log("======================================");
+  console.log(
+    "======================================"
+  );
+  console.log(
+    " GSMPoint - Actualizador de descargas "
+  );
+  console.log(
+    "======================================"
+  );
   console.log("");
 
   /*
    * Cargamos el JSON anterior.
    *
-   * Si una fuente falla, conservamos sus datos.
+   * Si alguna fuente falla,
+   * conservamos los datos anteriores.
    */
 
   let previous = {
@@ -806,15 +1073,18 @@ async function main() {
     tools: {}
   };
 
-  if (fs.existsSync(OUTPUT)) {
+  if (
+    fs.existsSync(OUTPUT)
+  ) {
     try {
-      previous = JSON.parse(
-        fs.readFileSync(
-          OUTPUT,
-          "utf8"
-        )
-      );
-    } catch (error) {
+      previous =
+        JSON.parse(
+          fs.readFileSync(
+            OUTPUT,
+            "utf8"
+          )
+        );
+    } catch {
       console.log(
         "Aviso: no se pudo leer el downloads.json anterior."
       );
@@ -822,7 +1092,9 @@ async function main() {
   }
 
   const result = {
-    updated_at: new Date().toISOString(),
+    updated_at:
+      new Date().toISOString(),
+
     tools: {
       ...(previous.tools || {})
     }
@@ -832,7 +1104,9 @@ async function main() {
      1 - UNLOCKTOOL
      ======================================================= */
 
-  console.log("1/7 - UnlockTool");
+  console.log(
+    "1/7 - UnlockTool"
+  );
 
   try {
     result.tools.unlocktool =
@@ -845,30 +1119,22 @@ async function main() {
     console.error(
       `WARN - UnlockTool no pudo actualizarse: ${error.message}`
     );
-
-    if (previous.tools?.unlocktool) {
-      console.log(
-        "Se conservarán los datos anteriores de UnlockTool."
-      );
-    } else {
-      console.error(
-        "No existen datos anteriores de UnlockTool."
-      );
-    }
   }
 
   /* =======================================================
      2 - SOFTWARE FIX
      ======================================================= */
 
-  console.log("2/7 - Software Fix");
+  console.log(
+    "2/7 - Software Fix"
+  );
 
   try {
     result.tools.software_fix =
       await updateSoftwareFix();
 
     console.log(
-      "OK - Software Fix actualizado"
+      `OK - Software Fix actualizado: v${result.tools.software_fix.version}`
     );
   } catch (error) {
     console.error(
@@ -880,14 +1146,16 @@ async function main() {
      3 - SAMFW
      ======================================================= */
 
-  console.log("3/7 - SamFw Tool");
+  console.log(
+    "3/7 - SamFw Tool"
+  );
 
   try {
     result.tools.samfw =
       await updateSamfw();
 
     console.log(
-      "OK - SamFw actualizado"
+      `OK - SamFw actualizado: v${result.tools.samfw.version}`
     );
   } catch (error) {
     console.error(
@@ -899,7 +1167,9 @@ async function main() {
      4 - PRIMETOOLX
      ======================================================= */
 
-  console.log("4/7 - PrimeToolX");
+  console.log(
+    "4/7 - PrimeToolX"
+  );
 
   try {
     result.tools.primetoolx =
@@ -918,7 +1188,9 @@ async function main() {
      5 - TSM
      ======================================================= */
 
-  console.log("5/7 - TSM");
+  console.log(
+    "5/7 - TSM"
+  );
 
   try {
     const tsm =
@@ -947,7 +1219,9 @@ async function main() {
      6 - BORNEO
      ======================================================= */
 
-  console.log("6/7 - Borneo Schematics");
+  console.log(
+    "6/7 - Borneo Schematics"
+  );
 
   try {
     result.tools.borneo_schematics =
@@ -966,7 +1240,9 @@ async function main() {
      7 - IREMOVAL
      ======================================================= */
 
-  console.log("7/7 - iRemoval PRO");
+  console.log(
+    "7/7 - iRemoval PRO"
+  );
 
   try {
     const iremoval =
@@ -995,27 +1271,48 @@ async function main() {
      GUARDAR DOWNLOADS.JSON
      ======================================================= */
 
-  const dataDir = path.dirname(OUTPUT);
+  const dataDir =
+    path.dirname(OUTPUT);
 
   if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, {
-      recursive: true
-    });
+    fs.mkdirSync(
+      dataDir,
+      {
+        recursive: true
+      }
+    );
   }
 
   fs.writeFileSync(
     OUTPUT,
-    JSON.stringify(result, null, 2) + "\n",
+    JSON.stringify(
+      result,
+      null,
+      2
+    ) + "\n",
     "utf8"
   );
 
   console.log("");
-  console.log("======================================");
-  console.log(" downloads.json actualizado");
-  console.log("======================================");
+  console.log(
+    "======================================"
+  );
+  console.log(
+    " downloads.json actualizado"
+  );
+  console.log(
+    "======================================"
+  );
   console.log("");
-  console.log(`Archivo: ${OUTPUT}`);
-  console.log(`Fecha: ${result.updated_at}`);
+
+  console.log(
+    `Archivo: ${OUTPUT}`
+  );
+
+  console.log(
+    `Fecha: ${result.updated_at}`
+  );
+
   console.log("");
 }
 
@@ -1025,9 +1322,15 @@ async function main() {
 
 main().catch((error) => {
   console.error("");
-  console.error("======================================");
-  console.error(" ERROR CRÍTICO");
-  console.error("======================================");
+  console.error(
+    "======================================"
+  );
+  console.error(
+    " ERROR CRÍTICO"
+  );
+  console.error(
+    "======================================"
+  );
   console.error("");
   console.error(error);
   console.error("");
