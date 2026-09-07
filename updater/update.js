@@ -280,11 +280,12 @@ async function updateSoftwareFix() {
   
   // Buscar SOLO el patrón correcto: software_fix_vX.X.X.X_setup.exe
   // Este es el formato de la versión más reciente (7.6.2.10)
-  const installerMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
+  // La URL debe contener "consumer/mobiles/" y "software_fix_v"
+  const match = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
 
-  if (installerMatch) {
-    const version = installerMatch[1];
-    const installerUrl = installerMatch[0];
+  if (match) {
+    const version = match[1];
+    const installerUrl = match[0];
     
     console.log(`✅ Versión encontrada: ${version}`);
     console.log(`📥 URL: ${installerUrl}`);
@@ -299,8 +300,8 @@ async function updateSoftwareFix() {
       }
     };
   }
-  
-  // Si no encuentra, buscar el patrón alternativo (RSA)
+
+  // Si no encuentra, buscar el patrón alternativo (RSA) como respaldo
   const backupMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/lsa\/Releases\/Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/);
   if (backupMatch) {
     const version = backupMatch[1];
