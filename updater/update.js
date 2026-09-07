@@ -270,7 +270,7 @@ async function updateUnlockTool() {
 
 
 /* =========================================================
-   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO DEFINITIVO
+   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO
    ========================================================= */
 
 async function updateSoftwareFix() {
@@ -278,9 +278,8 @@ async function updateSoftwareFix() {
   
   console.log("🔍 Buscando instalador de Software Fix...");
   
-  // Buscar SOLO el patrón correcto: software_fix_vX.X.X.X_setup.exe
-  // Este es el formato de la versión más reciente (7.6.2.10)
-  // La URL debe contener "consumer/mobiles/" y "software_fix_v"
+  // Buscar SOLO el enlace que contiene "consumer/mobiles/software_fix_v"
+  // Este es el formato CORRECTO de la versión 7.6.2.10
   const match = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
 
   if (match) {
@@ -301,13 +300,13 @@ async function updateSoftwareFix() {
     };
   }
 
-  // Si no encuentra, buscar el patrón alternativo (RSA) como respaldo
-  const backupMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/lsa\/Releases\/Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/);
+  // Si no encuentra el patrón correcto, buscar como respaldo
+  const backupMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
   if (backupMatch) {
     const version = backupMatch[1];
     const installerUrl = backupMatch[0];
     
-    console.log(`⚠️ Usando versión alternativa (RSA): ${version}`);
+    console.log(`✅ Versión encontrada (backup): ${version}`);
     console.log(`📥 URL: ${installerUrl}`);
     
     return {
@@ -412,12 +411,6 @@ function extractPrimeVersions(text) {
       const version =
         match[1];
 
-      /*
-       * 26.6.2 corresponde al nombre
-       * de la página/producto y no
-       * necesariamente a la descarga.
-       */
-
       if (
         version.startsWith("26.")
       ) {
@@ -446,11 +439,6 @@ async function updatePrimeToolX() {
       SOURCES.primetoolx
     );
 
-  /*
-   * Buscamos las descargas que realmente
-   * correspondan a PrimeToolX.
-   */
-
   const primeDownloads =
     mediafireLinks.filter(
       (link) =>
@@ -466,11 +454,6 @@ async function updatePrimeToolX() {
 
   const candidates = [];
 
-  /*
-   * Intentamos obtener la versión
-   * desde el nombre del archivo.
-   */
-
   for (const link of primeDownloads) {
     const versions =
       extractPrimeVersions(
@@ -484,11 +467,6 @@ async function updatePrimeToolX() {
       });
     }
   }
-
-  /*
-   * También buscamos "Versión X.X"
-   * cerca del enlace.
-   */
 
   for (const link of primeDownloads) {
     const index =
@@ -580,12 +558,6 @@ async function updateTSM() {
       SOURCES.tsm
     );
 
-  /*
-   * -------------------------------------------------------
-   * TSM-TOOL PRO
-   * -------------------------------------------------------
-   */
-
   const proVersions = [
     ...html.matchAll(
       /TSM[_\s-]*SetupV?(\d+\.\d+\.\d+)/gi
@@ -622,20 +594,10 @@ async function updateTSM() {
   }
 
   if (!tsmProVersion) {
-    /*
-     * Última versión conocida.
-     */
-
     tsmProVersion =
       "2.4.1";
   }
 
-
-  /*
-   * -------------------------------------------------------
-   * TSM-PRO EDITION
-   * -------------------------------------------------------
-   */
 
   const editionVersions = [
     ...html.matchAll(
@@ -675,12 +637,6 @@ async function updateTSM() {
   }
 
 
-  /*
-   * -------------------------------------------------------
-   * ENLACES
-   * -------------------------------------------------------
-   */
-
   const googleDriveLinks =
     extractGoogleDriveLinks(
       html
@@ -702,12 +658,6 @@ async function updateTSM() {
       html
     );
 
-
-  /*
-   * -------------------------------------------------------
-   * TSM-TOOL PRO
-   * -------------------------------------------------------
-   */
 
   const tsmToolDownloads = {};
 
@@ -750,12 +700,6 @@ async function updateTSM() {
     ) ||
     "https://www.dropbox.com/scl/fi/ieg1lxay7kc5olcu1ocmt/TSM_SetupV2.4.1.7z?rlkey=iclglr7e9itkyw2snfyqdcw9w&st=57r203qn&dl=0";
 
-
-  /*
-   * -------------------------------------------------------
-   * TSM-PRO EDITION
-   * -------------------------------------------------------
-   */
 
   const editionDownloads = {};
 
@@ -962,10 +906,6 @@ async function updateIRemoval() {
       SOURCES.iremoval
     );
 
-  /*
-   * iRemoval PRO X
-   */
-
   let proXVersion =
     null;
 
@@ -985,10 +925,6 @@ async function updateIRemoval() {
   }
 
 
-  /*
-   * iRemoval Premium
-   */
-
   let premiumVersion =
     null;
 
@@ -1007,11 +943,6 @@ async function updateIRemoval() {
         .at(-1);
   }
 
-
-  /*
-   * Si la página no expone la versión,
-   * conservamos la última conocida.
-   */
 
   if (!proXVersion) {
     proXVersion =
@@ -1086,12 +1017,6 @@ async function main() {
   console.log("");
 
 
-  /*
-   * Leemos el JSON anterior solamente
-   * para poder conservar datos de herramientas
-   * cuya página temporalmente no responda.
-   */
-
   let previous = {
     updated_at: null,
     tools: {}
@@ -1127,10 +1052,6 @@ async function main() {
   };
 
 
-  /* =======================================================
-     1 - UNLOCKTOOL
-     ======================================================= */
-
   console.log(
     "1/7 - UnlockTool"
   );
@@ -1152,10 +1073,6 @@ async function main() {
 
   }
 
-
-  /* =======================================================
-     2 - SOFTWARE FIX - CORREGIDO DEFINITIVO
-     ======================================================= */
 
   console.log(
     "2/7 - Software Fix"
@@ -1179,10 +1096,6 @@ async function main() {
   }
 
 
-  /* =======================================================
-     3 - SAMFW
-     ======================================================= */
-
   console.log(
     "3/7 - SamFw Tool"
   );
@@ -1205,10 +1118,6 @@ async function main() {
   }
 
 
-  /* =======================================================
-     4 - PRIMETOOLX
-     ======================================================= */
-
   console.log(
     "4/7 - PrimeToolX"
   );
@@ -1230,10 +1139,6 @@ async function main() {
 
   }
 
-
-  /* =======================================================
-     5 - TSM
-     ======================================================= */
 
   console.log(
     "5/7 - TSM"
@@ -1267,10 +1172,6 @@ async function main() {
   }
 
 
-  /* =======================================================
-     6 - BORNEO
-     ======================================================= */
-
   console.log(
     "6/7 - Borneo Schematics"
   );
@@ -1292,10 +1193,6 @@ async function main() {
 
   }
 
-
-  /* =======================================================
-     7 - IREMOVAL
-     ======================================================= */
 
   console.log(
     "7/7 - iRemoval PRO"
@@ -1328,10 +1225,6 @@ async function main() {
 
   }
 
-
-  /* =======================================================
-     GUARDAR JSON
-     ======================================================= */
 
   const dataDir =
     path.dirname(OUTPUT);
@@ -1385,10 +1278,6 @@ async function main() {
   console.log("");
 }
 
-
-/* =========================================================
-   EJECUCIÓN
-   ========================================================= */
 
 main().catch((error) => {
 
