@@ -7,12 +7,12 @@ const SOURCES = {
   unlocktool: "https://file.unlocktool.net/",
 
   software_fix:
-    "https://support.lenovo.com/us/en/downloads/ds101291-rescue-and-smart-assistant-lmsa",
+    "https://es-es.support.motorola.com/app/answers/detail/a_id/164170",
 
   samfw: "https://samfw.com/blog/samfwtool",
 
   primetoolx:
-    "https://www.gsmprime.online/software-primetoolx26",
+    "https://www.gsmprime.online/",
 
   tsm:
     "https://tsm-tool.com/download",
@@ -270,100 +270,64 @@ async function updateUnlockTool() {
 
 
 /* =========================================================
-   SOFTWARE FIX - LENOVO / MOTOROLA
+   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO
    ========================================================= */
 
 async function updateSoftwareFix() {
-  const html =
-    await fetchPage(
-      SOURCES.software_fix
-    );
+  const html = await fetchPage(SOURCES.software_fix);
 
   /*
-   * Lenovo publica actualmente
-   * el instalador con este formato:
-   *
-   * software_fix_v7.6.2.10_setup.exe
+   * Buscar el instalador con el formato correcto
+   * Rescue_and_Smart_Assistant_vX.X.X.X_prod_setup.exe
+   * o software_fix_vX.X.X.X_setup.exe
    */
-
-  const matches = [
-    ...html.matchAll(
-      /software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi
-    )
+  
+  const patterns = [
+    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi,
+    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi,
+    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*lmsa_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi
   ];
 
-  if (!matches.length) {
-    throw new Error(
-      "No se encontró versión de Software Fix en Lenovo"
-    );
+  let allInstallers = [];
+
+  for (const pattern of patterns) {
+    const matches = [...html.matchAll(pattern)];
+    for (const match of matches) {
+      allInstallers.push({
+        version: match[1],
+        url: match[0]
+      });
+    }
   }
 
-  const versions =
-    unique(
-      matches.map(
-        (m) => m[1]
-      )
-    );
-
-  versions.sort(
-    compareVersions
-  );
-
-  const version =
-    versions.at(-1);
-
-  /*
-   * Buscamos solamente el instalador
-   * oficial alojado en download.lenovo.com
-   */
-
-  const installerMatches = [
-    ...html.matchAll(
-      /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v\d+\.\d+\.\d+_setup\.exe/gi
-    )
-  ].map(
-    (m) => m[0]
-  );
-
-  if (!installerMatches.length) {
-    throw new Error(
-      "No se encontró instalador de Software Fix en Lenovo"
-    );
+  if (!allInstallers.length) {
+    throw new Error("No se encontró instalador de Software Fix en Lenovo");
   }
 
-  /*
-   * Nos aseguramos de que el enlace
-   * corresponda a la versión detectada.
-   */
-
-  const installer =
-    installerMatches.find(
-      (url) =>
-        url.includes(
-          `software_fix_v${version}_setup.exe`
-        )
-    );
-
-  if (!installer) {
-    throw new Error(
-      `Se encontró la versión ${version}, pero no su instalador`
-    );
+  // Eliminar duplicados y ordenar por versión
+  const uniqueInstallers = [];
+  const seenUrls = new Set();
+  
+  for (const installer of allInstallers) {
+    if (!seenUrls.has(installer.url)) {
+      seenUrls.add(installer.url);
+      uniqueInstallers.push(installer);
+    }
   }
+
+  // Ordenar por versión y obtener la más reciente
+  uniqueInstallers.sort((a, b) => compareVersions(a.version, b.version));
+  const latest = uniqueInstallers.at(-1);
+
+  console.log(`Versión encontrada: ${latest.version} - ${latest.url}`);
 
   return {
-    name:
-      "Software Fix - Lenovo/Motorola",
-
-    version,
-
-    description:
-      "Herramienta para reparación de software",
-
-    source:
-      SOURCES.software_fix,
-
+    name: "Software Fix - Lenovo/Motorola",
+    version: latest.version,
+    description: "Herramienta para reparación de software",
+    source: SOURCES.software_fix,
     downloads: {
-      installer
+      installer: latest.url
     }
   };
 }
@@ -1198,7 +1162,7 @@ async function main() {
 
 
   /* =======================================================
-     2 - SOFTWARE FIX
+     2 - SOFTWARE FIX - CORREGIDO
      ======================================================= */
 
   console.log(
