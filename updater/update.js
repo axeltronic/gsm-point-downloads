@@ -270,7 +270,7 @@ async function updateUnlockTool() {
 
 
 /* =========================================================
-   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO
+   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO DEFINITIVO
    ========================================================= */
 
 async function updateSoftwareFix() {
