@@ -278,43 +278,49 @@ async function updateSoftwareFix() {
   
   console.log("🔍 Buscando instalador de Software Fix...");
   
-  // Buscar el enlace directo al instalador EXE con el formato correcto
-  // El formato actual es: software_fix_v7.6.2.10_setup.exe
-  const installerMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
+  // Buscar SOLO el patrón correcto: software_fix_vX.X.X.X_setup.exe
+  // Este es el formato de la versión más reciente (7.6.2.10)
+  const installerMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/consumer\/mobiles\/software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/);
 
-  // Si no encuentra con el patrón principal, buscar Rescue_and_Smart_Assistant
-  let version = null;
-  let installerUrl = null;
-  
   if (installerMatch) {
-    version = installerMatch[1];
-    installerUrl = installerMatch[0];
-    console.log(`✅ Versión encontrada (software_fix): ${version}`);
-  } else {
-    // Buscar Rescue_and_Smart_Assistant como respaldo
-    const backupMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/);
-    if (backupMatch) {
-      version = backupMatch[1];
-      installerUrl = backupMatch[0];
-      console.log(`✅ Versión encontrada (Rescue_and_Smart_Assistant): ${version}`);
-    }
+    const version = installerMatch[1];
+    const installerUrl = installerMatch[0];
+    
+    console.log(`✅ Versión encontrada: ${version}`);
+    console.log(`📥 URL: ${installerUrl}`);
+    
+    return {
+      name: "Software Fix - Lenovo/Motorola",
+      version: version,
+      description: "Herramienta para reparación de software",
+      source: SOURCES.software_fix,
+      downloads: {
+        installer: installerUrl
+      }
+    };
+  }
+  
+  // Si no encuentra, buscar el patrón alternativo (RSA)
+  const backupMatch = html.match(/https?:\/\/[^"'\s<>]*download\.lenovo\.com\/lsa\/Releases\/Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/);
+  if (backupMatch) {
+    const version = backupMatch[1];
+    const installerUrl = backupMatch[0];
+    
+    console.log(`⚠️ Usando versión alternativa (RSA): ${version}`);
+    console.log(`📥 URL: ${installerUrl}`);
+    
+    return {
+      name: "Software Fix - Lenovo/Motorola",
+      version: version,
+      description: "Herramienta para reparación de software",
+      source: SOURCES.software_fix,
+      downloads: {
+        installer: installerUrl
+      }
+    };
   }
 
-  if (!version || !installerUrl) {
-    throw new Error("No se encontró el instalador de Software Fix en la página");
-  }
-
-  console.log(`📥 URL del instalador: ${installerUrl}`);
-
-  return {
-    name: "Software Fix - Lenovo/Motorola",
-    version: version,
-    description: "Herramienta para reparación de software",
-    source: SOURCES.software_fix,
-    downloads: {
-      installer: installerUrl
-    }
-  };
+  throw new Error("No se encontró el instalador de Software Fix en la página");
 }
 
 
