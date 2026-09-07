@@ -12,7 +12,7 @@ const SOURCES = {
   samfw: "https://samfw.com/blog/samfwtool",
 
   primetoolx:
-    "https://www.gsmprime.online/",
+    "https://www.gsmprime.online/software-primetoolx26",
 
   tsm:
     "https://tsm-tool.com/download",
@@ -270,57 +270,133 @@ async function updateUnlockTool() {
 
 
 /* =========================================================
-   SOFTWARE FIX - LENOVO / MOTOROLA - CORREGIDO
+   SOFTWARE FIX - LENOVO / MOTOROLA - VERSIÓN MEJORADA
    ========================================================= */
 
 async function updateSoftwareFix() {
   const html = await fetchPage(SOURCES.software_fix);
-
+  
+  // Guardar HTML para depuración
+  const debugDir = path.join(__dirname, 'debug');
+  if (!fs.existsSync(debugDir)) {
+    fs.mkdirSync(debugDir, { recursive: true });
+  }
+  const debugFile = path.join(debugDir, `software_fix_${Date.now()}.html`);
+  fs.writeFileSync(debugFile, html, 'utf8');
+  console.log(`📁 HTML guardado para depuración en: ${debugFile}`);
+  
+  console.log("🔍 Buscando instalador de Software Fix...");
+  
   /*
-   * Buscar el instalador con el formato correcto
-   * Rescue_and_Smart_Assistant_vX.X.X.X_prod_setup.exe
-   * o software_fix_vX.X.X.X_setup.exe
+   * Buscar TODOS los posibles enlaces de instalación
+   * con diferentes patrones
    */
   
-  const patterns = [
-    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi,
-    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi,
-    /https?:\/\/[^"'<> \s]*download\.lenovo\.com\/[^"'\s<>]*lmsa_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi
-  ];
-
-  let allInstallers = [];
-
-  for (const pattern of patterns) {
-    const matches = [...html.matchAll(pattern)];
-    for (const match of matches) {
-      allInstallers.push({
-        version: match[1],
-        url: match[0]
-      });
+  const allMatches = [];
+  
+  // Patrón 1: Rescue_and_Smart_Assistant_vX.X.X.X_prod_setup.exe
+  const pattern1 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*Rescue_and_Smart_Assistant_v(\d+\.\d+\.\d+\.\d+)_prod_setup\.exe/gi;
+  for (const match of html.matchAll(pattern1)) {
+    allMatches.push({
+      version: match[1],
+      url: match[0],
+      pattern: 'Rescue_and_Smart_Assistant'
+    });
+  }
+  
+  // Patrón 2: software_fix_vX.X.X.X_setup.exe
+  const pattern2 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*software_fix_v?(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi;
+  for (const match of html.matchAll(pattern2)) {
+    allMatches.push({
+      version: match[1],
+      url: match[0],
+      pattern: 'software_fix'
+    });
+  }
+  
+  // Patrón 3: lmsa_vX.X.X.X.exe
+  const pattern3 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*lmsa_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi;
+  for (const match of html.matchAll(pattern3)) {
+    allMatches.push({
+      version: match[1],
+      url: match[0],
+      pattern: 'lmsa'
+    });
+  }
+  
+  // Patrón 4: RSA_vX.X.X.X_setup.exe
+  const pattern4 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*RSA_v?(\d+\.\d+\.\d+\.\d+)_setup\.exe/gi;
+  for (const match of html.matchAll(pattern4)) {
+    allMatches.push({
+      version: match[1],
+      url: match[0],
+      pattern: 'RSA'
+    });
+  }
+  
+  // Patrón 5: Rescue_Assistant_vX.X.X.X.exe
+  const pattern5 = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*Rescue_Assistant_v?(\d+\.\d+\.\d+\.\d+)\.exe/gi;
+  for (const match of html.matchAll(pattern5)) {
+    allMatches.push({
+      version: match[1],
+      url: match[0],
+      pattern: 'Rescue_Assistant'
+    });
+  }
+  
+  console.log(`📊 Encontrados ${allMatches.length} posibles instaladores`);
+  
+  if (!allMatches.length) {
+    // Si no encontramos enlaces, intentamos buscar cualquier .exe relacionado
+    console.log("⚠️ No se encontraron instaladores con patrones específicos, buscando cualquier .exe...");
+    const fallbackPattern = /https?:\/\/[^"'\s<>]*download\.lenovo\.com\/[^"'\s<>]*\.exe/gi;
+    const exeMatches = [...html.matchAll(fallbackPattern)];
+    
+    for (const match of exeMatches) {
+      const url = match[0];
+      // Intentar extraer versión del nombre del archivo
+      const versionMatch = url.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if (versionMatch && (url.includes('Rescue') || url.includes('Assistant') || url.includes('software') || url.includes('lmsa') || url.includes('rsa'))) {
+        allMatches.push({
+          version: versionMatch[1],
+          url: url,
+          pattern: 'fallback'
+        });
+      }
     }
   }
-
-  if (!allInstallers.length) {
-    throw new Error("No se encontró instalador de Software Fix en Lenovo");
+  
+  if (!allMatches.length) {
+    throw new Error("No se encontró ningún instalador de Software Fix en Lenovo");
   }
-
-  // Eliminar duplicados y ordenar por versión
-  const uniqueInstallers = [];
+  
+  // Mostrar todas las versiones encontradas
+  console.log("📋 Versiones encontradas:");
+  allMatches.forEach((m, i) => {
+    console.log(`  ${i+1}. ${m.version} (${m.pattern}): ${m.url.substring(0, 80)}...`);
+  });
+  
+  // Eliminar duplicados
+  const uniqueMatches = [];
   const seenUrls = new Set();
   
-  for (const installer of allInstallers) {
-    if (!seenUrls.has(installer.url)) {
-      seenUrls.add(installer.url);
-      uniqueInstallers.push(installer);
+  for (const match of allMatches) {
+    if (!seenUrls.has(match.url)) {
+      seenUrls.add(match.url);
+      uniqueMatches.push(match);
     }
   }
-
-  // Ordenar por versión y obtener la más reciente
-  uniqueInstallers.sort((a, b) => compareVersions(a.version, b.version));
-  const latest = uniqueInstallers.at(-1);
-
-  console.log(`Versión encontrada: ${latest.version} - ${latest.url}`);
-
+  
+  // Ordenar por versión (usando compareVersions)
+  uniqueMatches.sort((a, b) => {
+    return compareVersions(a.version, b.version);
+  });
+  
+  const latest = uniqueMatches.at(-1);
+  
+  console.log(`✅ Versión más reciente: ${latest.version} (${latest.pattern})`);
+  console.log(`📥 Enlace: ${latest.url}`);
+  
   return {
     name: "Software Fix - Lenovo/Motorola",
     version: latest.version,
