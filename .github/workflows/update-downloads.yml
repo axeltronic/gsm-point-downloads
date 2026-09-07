@@ -1,0 +1,40 @@
+name: Actualizar Centro de Descargas
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Actualizar descargas
+        run: node updater/update.js
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "GSMPoint Bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          git add data/downloads.json
+
+          if git diff --cached --quiet; then
+            echo "No hubo cambios."
+          else
+            git commit -m "Actualizar Centro de Descargas"
+            git push
+          fi
