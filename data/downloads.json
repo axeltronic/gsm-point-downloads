@@ -1,15 +1,13 @@
 {
-  "updated_at": "2026-09-25T15:59:30.633Z",
+  "updated_at": "2026-09-25T20:47:44.346Z",
   "tools": {
     "unlocktool": {
       "name": "UnlockTool",
-      "version": "2026-09-02-0",
+      "version": "2026-09-23-0",
       "description": "Herramienta completa para desbloqueo",
       "source": "https://file.unlocktool.net/",
       "downloads": {
-        "google_drive": "https://drive.google.com/file/d/1zXKFjQLgzdu1QWYI5hJoVWtVK9S0U1VK/view?usp=sharing",
-        "mediafire": "https://www.mediafire.com/file_premium/g7ji0f6rswt9l1z/UnlockTool-2026-09-02-0.zip/file",
-        "mega": "https://mega.nz/file/e84nHATT#qYJdDqqPFtTQq64NwTykEbphyKLJgEy6z3z2NSUF9D0"
+        "mediafire": "https://www.mediafire.com/file_premium/ii6vxzipry08f77/UnlockTool-2026-09-23-0.zip/file"
       }
     },
     "software_fix": {
