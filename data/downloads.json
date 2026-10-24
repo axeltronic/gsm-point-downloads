@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-24T14:56:36.616Z",
+  "updated_at": "2026-10-24T19:53:14.513Z",
   "tools": {
     "unlocktool": {
       "name": "UnlockTool",
@@ -30,11 +30,11 @@
     },
     "primetoolx": {
       "name": "PrimeToolX",
-      "version": "27.0.1",
+      "version": "27.0.2",
       "description": "Herramienta para técnicos",
       "source": "https://www.gsmprime.online/software-primetoolx26",
       "downloads": {
-        "mediafire": "https://www.mediafire.com/file_premium/miqu6rr6hy1nim3/PrimeToolX27.0.1.rar/file"
+        "mediafire": "https://www.mediafire.com/file_premium/zrpevp5nvl7mbg0/PrimeToolX27.0.2.rar/file"
       }
     },
     "tsm_tool_pro": {
