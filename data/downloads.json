@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-15T22:09:32.072Z",
+  "updated_at": "2026-11-16T03:22:28.038Z",
   "tools": {
     "unlocktool": {
       "name": "UnlockTool",
@@ -21,11 +21,11 @@
     },
     "samfw": {
       "name": "SamFw Tool",
-      "version": "6.2",
+      "version": "6.3",
       "description": "Herramienta para dispositivos Samsung",
       "source": "https://samfw.com/blog/samfwtool",
       "downloads": {
-        "zip": "https://samfw.com/SamFwToolSetup_v6.2.zip"
+        "zip": "https://samfw.com/SamFwToolSetup_v6.3.zip"
       }
     },
     "primetoolx": {
